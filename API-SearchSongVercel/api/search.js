@@ -1,3 +1,5 @@
+// by @TheOfficialDirsRBX
+
 export default async function handler(req, res) {
     const { q } = req.query;
     if (!q) return res.status(400).json({ error: "empty search" });
@@ -8,13 +10,16 @@ export default async function handler(req, res) {
         `https://apis.roproxy.com/toolbox-service/v1/marketplace/3?keyword=${encodeURIComponent(q)}&numResults=20&cb=${buster}`,
         `https://catalog.roproxy.com/v1/search/items/details?Category=9&AssetTypeId=3&Keyword=${encodeURIComponent(q)}&Limit=20&cb=${buster}`
     ];
-
+    
     res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET');
+    res.setHeader('Content-Type', 'application/json');
 
     for (const url of urls) {
         try {
             const response = await fetch(url, {
-                headers: { "User-Agent": "Mozilla/5.0" }
+                headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" },
+                signal: AbortSignal.timeout(5000)
             });
 
             if (!response.ok) continue;
@@ -25,14 +30,18 @@ export default async function handler(req, res) {
             if (rawData.length > 0) {
                 const results = rawData.map(item => ({
                     AssetId: item.asset ? item.asset.id : item.id,
-                    Name: item.asset ? item.asset.name : item.name
+                    Name: item.asset ? item.asset.name : (item.name || "Unnamed")
                 }));
 
                 return res.status(200).json(results);
             }
         } catch (err) {
-            console.error("query error:", url);
+            console.error("Tentativa falhou para:", url);
         }
     }
-    return res.status(200).json([{ AssetId: 0, Name: "ROBLOX Servers are busy for now. Please try again later." }]);
+
+    return res.status(200).json([{ 
+        AssetId: 0, 
+        Name: "servers are busy" 
+    }]);
 }
