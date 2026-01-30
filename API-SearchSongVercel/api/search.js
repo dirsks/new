@@ -1,8 +1,9 @@
 export default async function handler(req, res) {
     const { q } = req.query;
-    if (!q) return res.status(400).json({ error: "empty search" });
+    if (!q) return res.status(400).json({ error: "Busca vazia" });
 
-    const url = `https://catalog.rbxproxy.com/v1/search/items/details?Category=9&AssetTypeId=3&Keyword=${encodeURIComponent(q)}&Limit=30`;
+    // Trocando para o RoProxy que é mais estável na Vercel
+    const url = `https://catalog.roproxy.com/v1/search/items/details?Category=9&AssetTypeId=3&Keyword=${encodeURIComponent(q)}&Limit=30`;
 
     try {
         const response = await fetch(url, {
@@ -12,17 +13,24 @@ export default async function handler(req, res) {
             }
         });
 
+        if (!response.ok) {
+            throw new Error(`Erro na API do Roblox: ${response.status}`);
+        }
+
         const data = await response.json();
 
-        const results = (data.data || [])
-            .map(item => ({
-                AssetId: item.id,
-                Name: item.name
-            }));
+        // Mapeando os resultados com segurança
+        const results = (data.data || []).map(item => ({
+            AssetId: item.id,
+            Name: item.name
+        }));
 
+        // Habilitando o CORS para o Roblox conseguir ler os dados
         res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('Access-Control-Allow-Methods', 'GET');
+        
         return res.status(200).json(results);
     } catch (err) {
-        return res.status(500).json({ error: err.message });
+        return res.status(500).json({ error: "Falha na busca", details: err.message });
     }
 }
