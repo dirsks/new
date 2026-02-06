@@ -28,15 +28,32 @@ export default async function handler(req, res) {
             const rawData = data.data || [];
 
             if (rawData.length > 0) {
-                const results = rawData.map(item => ({
-                    AssetId: item.asset ? item.asset.id : item.id,
-                    Name: item.asset ? item.asset.name : (item.name || "Unnamed")
-                }));
+                // const results = rawData.map(item => ({
+                //     AssetId: item.asset ? item.asset.id : item.id,
+                //     Name: item.asset ? item.asset.name : (item.name || "Unnamed")
+                // }));
+                const results = rawData.map(item => {
+    const assetId =
+        item.asset?.id ??
+        item.id ??
+        0;
+
+    const name =
+        item.asset?.name ??
+        item.name ??
+        item.displayName ??
+        `Audio ${assetId}`;
+
+    return {
+        AssetId: assetId,
+        Name: name
+    };
+});
 
                 return res.status(200).json(results);
             }
         } catch (err) {
-            console.error("Tentativa falhou para:", url);
+            console.error("try failed for:", url);
         }
     }
 
